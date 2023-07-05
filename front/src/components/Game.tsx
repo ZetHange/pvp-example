@@ -60,8 +60,10 @@ const Game: Component<Props> = ({ login }) => {
         };
         break;
     }
-    setMyPos(newPos);
-    ws.send(JSON.stringify(newPos));
+    if (newPos) {
+      setMyPos(newPos);
+      ws.send(JSON.stringify(newPos));
+    }
   };
 
   window.addEventListener("keydown", handleKeyPress);
