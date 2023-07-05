@@ -29,7 +29,8 @@ const Game: Component<Props> = ({ login }) => {
   const [pos, setPos] = createSignal<IPos[]>();
   const [myPos, setMyPos] = createSignal<any>();
 
-  const ws = new WebSocket("ws://192.168.1.7:8080/map?id=0&auth=" + login);
+  console.log(location.hostname);
+  const ws = new WebSocket(`ws://${location.hostname}/map?id=0&auth=` + login);
 
   const handleKeyPress = (event: any) => {
     const stepCount = 3;
