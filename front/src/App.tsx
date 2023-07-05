@@ -3,36 +3,7 @@ import Game from "./components/Game";
 
 const App: Component = () => {
   const [isLoggedIn, setIsLoggedIn] = createSignal(false);
-  const [login, setLogin] = createSignal("user1");
-  const [password, setPassword] = createSignal("1234");
-
-  const checkAuth = async () => {
-    const res = await fetch("http://localhost:8080/login", {
-      method: "POST",
-      headers: {
-        Authorization: "Basic " + btoa(login() + ":" + password()),
-      },
-    });
-
-    if (res.status === 401) {
-      alert("Неверный пароль");
-    } else {
-      setIsLoggedIn(true);
-    }
-  };
-  const register = async () => {
-    const res = await fetch("http://localhost:8080/login", {
-      method: "POST",
-      body: JSON.stringify({
-        login,
-        password,
-      }),
-    });
-    if (res.status === 201) {
-      alert("Вы зарегистрированны успешно");
-      location.reload();
-    }
-  };
+  const [login, setLogin] = createSignal("user");
 
   return (
     <div>
@@ -44,18 +15,10 @@ const App: Component = () => {
             setLogin(e.target.value);
           }}
         />
-        <input
-          placeholder="Пароль..."
-          value={password()}
-          onChange={(e) => {
-            setPassword(e.target.value);
-          }}
-        />
-        <button onClick={() => checkAuth()}>Авторизоваться</button>
-        <button onClick={() => register()}>Зарегистрироваться</button>
+        <button onClick={() => setIsLoggedIn(true)}>Войти</button>
       </Show>
       <Show when={isLoggedIn()}>
-        <Game login={login()} password={password()} />
+        <Game login={login()} />
       </Show>
     </div>
   );

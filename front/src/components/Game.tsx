@@ -17,10 +17,9 @@ interface IMap {
 
 interface Props {
   login: string;
-  password: string;
 }
 
-const Game: Component<Props> = ({ login, password }) => {
+const Game: Component<Props> = ({ login }) => {
   const [map, setMap] = createSignal<IMap>({
     background: "",
     id: 0,
@@ -30,76 +29,77 @@ const Game: Component<Props> = ({ login, password }) => {
   const [pos, setPos] = createSignal<IPos[]>();
   const [myPos, setMyPos] = createSignal<any>();
 
-  const ws = new WebSocket(
-    `ws://localhost:8080/map?id=0&auth=${login}:${password}`
-  );
+  const ws = new WebSocket("ws://192.168.1.7:8080/map?id=0&auth=" + login);
 
   const handleKeyPress = (event: any) => {
     const stepCount = 3;
-    if (event.key === "w") {
-      const newPos = {
-        ...myPos(),
-        y: myPos().y + stepCount,
-      };
-      setMyPos(newPos);
-      ws.send(JSON.stringify(newPos));
-    } else if (event.key === "s") {
-      const newPos = {
-        ...myPos(),
-        y: myPos().y - stepCount,
-      };
-      setMyPos(newPos);
-      ws.send(JSON.stringify(newPos));
-    } else if (event.key === "a") {
-      const newPos = {
-        ...myPos(),
-        x: myPos().x - stepCount,
-      };
-      setMyPos(newPos);
-      ws.send(JSON.stringify(newPos));
-    } else if (event.key === "d") {
-      const newPos = {
-        ...myPos(),
-        x: myPos().x + stepCount,
-      };
-      setMyPos(newPos);
-      ws.send(JSON.stringify(newPos));
+    switch (event.key) {
+      case "w":
+        var newPos = {
+          ...myPos(),
+          y: myPos().y + stepCount,
+        };
+        break;
+      case "s":
+        var newPos = {
+          ...myPos(),
+          y: myPos().y - stepCount,
+        };
+        break;
+      case "a":
+        var newPos = {
+          ...myPos(),
+          x: myPos().x - stepCount,
+        };
+        break;
+      case "d":
+        var newPos = {
+          ...myPos(),
+          x: myPos().x + stepCount,
+        };
+        break;
     }
+    setMyPos(newPos);
+    ws.send(JSON.stringify(newPos));
   };
 
   window.addEventListener("keydown", handleKeyPress);
 
   ws.onmessage = (event: MessageEvent) => {
     const data = JSON.parse(event.data);
-
-    if (data.title === "Кордон") {
-      console.log(data);
-      setMap(data);
-      setMyPos(data.position);
-      setPos(data.positions);
-      return;
-    }
-    const posCopy: IPos[] = JSON.parse(JSON.stringify(pos()));
-
-    if (data.type === "close") {
-      const posId = posCopy?.indexOf(
-        posCopy?.find((pos) => pos.login === data.login)!
-      );
-      posCopy.splice(posId, 1);
-      setPos(posCopy);
-      return;
-    }
-    const posId = posCopy?.indexOf(
-      posCopy?.find((pos) => pos.login === data.login)!
+    const posCopy: IPos[] = JSON.parse(
+      JSON.stringify(pos() || { x: 500, y: 500 })
     );
-    if (posId === -1) {
-      posCopy.push(data);
-    } else {
-      posCopy?.splice(posId!, 1, data);
-    }
-    console.log(posCopy);
 
-    setPos(posCopy);
+    switch (data.type) {
+      case "map":
+        console.log("Карта:", data);
+        setMap(data);
+        setMyPos(data.position);
+        setPos(data.positions);
+        return;
+      case "close":
+        console.log("Пользователь отключился:", data);
+        const posId = posCopy?.indexOf(
+          posCopy?.find((pos) => pos.login === data.login)!
+        );
+        posCopy.splice(posId, 1);
+        setPos(posCopy);
+        return;
+      case "updatePosition":
+        console.log("Обновление позиции:", data);
+        const posIdUpdate = posCopy?.indexOf(
+          posCopy?.find((pos) => pos.login === data.login)!
+        );
+        posCopy?.splice(posIdUpdate!, 1, data);
+        setPos(posCopy);
+        return;
+      case "newUser":
+        console.log("Новый пользователь:", data);
+        posCopy.push(data);
+        setPos(posCopy);
+        return;
+    }
   };
 
   return (
@@ -112,7 +112,6 @@ const Game: Component<Props> = ({ login, password }) => {
         <img src={map().background} />
         <For each={pos()}>
           {(pos) => {
-            console.log(pos);
             return (
               <>
                 <div
